@@ -1,0 +1,2781 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Balance Mensual - Gestión de Gastos</title>
+    <meta name="theme-color" content="#090d16">
+    <meta name="description" content="Gestión inteligente de gastos personales con tope mensual y calendario.">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            /* Modo Claro (Predeterminado) */
+            --bg-app: #f1f5f9;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --border-card: rgba(226, 232, 240, 0.8);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent-primary: #3b82f6;
+            --accent-primary-hover: #2563eb;
+            --accent-primary-glow: rgba(59, 130, 246, 0.2);
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --shadow-sm: 0 4px 10px rgba(15, 23, 42, 0.03);
+            --shadow-md: 0 10px 25px rgba(15, 23, 42, 0.05);
+            --glass-blur: 16px;
+            --card-radius: 24px;
+        }
+
+        [data-theme="dark"] {
+            /* Modo Oscuro */
+            --bg-app: #090d16;
+            --bg-card: rgba(17, 24, 39, 0.75);
+            --border-card: rgba(31, 41, 55, 0.6);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-primary: #3b82f6;
+            --accent-primary-hover: #60a5fa;
+            --accent-primary-glow: rgba(59, 130, 246, 0.35);
+            --accent-success: #34d399;
+            --accent-warning: #fbbf24;
+            --accent-danger: #f87171;
+            --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.15);
+            --shadow-md: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-app);
+            background-image: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.02) 0%, transparent 40%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .tablet-frame {
+            background-color: var(--bg-card);
+            border-radius: var(--card-radius);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-card);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            width: 95vw;
+            max-width: 1240px;
+            height: 90vh;
+            max-height: 850px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+            overflow: hidden;
+        }
+
+        .tablet-screen {
+            background-color: transparent;
+            border-radius: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: row;
+            gap: 24px;
+            flex: 1;
+            height: calc(100% - 62px);
+            overflow: hidden;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-card);
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: -0.5px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .theme-toggle-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            color: var(--text-primary);
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .theme-toggle-btn:hover {
+            transform: scale(1.05);
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+            box-shadow: var(--accent-primary-glow);
+        }
+
+        .avatar-container {
+            position: relative;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            background-color: var(--accent-primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .avatar:hover {
+            transform: scale(1.05);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 52px;
+            right: 0;
+            background: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            padding: 8px 0;
+            width: 200px;
+            z-index: 999;
+            display: none;
+            border: 1px solid var(--border-card);
+            animation: dropdownFadeIn 0.2s ease;
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+        }
+
+        .user-dropdown.show {
+            display: block;
+        }
+
+        @keyframes dropdownFadeIn {
+            from {
+                transform: translateY(-5px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .dropdown-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-card);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: left;
+        }
+
+        .dropdown-user-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            text-align: left;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+        }
+
+        .dropdown-item.danger-hover:hover {
+            background-color: rgba(239, 68, 68, 0.08);
+            color: var(--accent-danger);
+        }
+
+        /* --- Barra Lateral (Sidebar) --- */
+        .sidebar {
+            width: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-shrink: 0;
+            border-right: 1px solid var(--border-card);
+            padding-right: 16px;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .sidebar-item i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+        }
+
+        .sidebar-item:hover i {
+            transform: scale(1.1);
+        }
+
+        .sidebar-item.active {
+            background-color: var(--accent-primary);
+            color: white;
+            box-shadow: var(--accent-primary-glow);
+        }
+
+        .sidebar-item.active i {
+            color: white;
+        }
+
+        /* --- Contenedor de Pestañas --- */
+        .content-pane {
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .tab-pane {
+            display: none;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            animation: tabFadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes tabFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Layouts de Vistas --- */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 24px;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .dashboard-left,
+        .dashboard-right {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+            overflow-y: auto;
+            padding-right: 4px;
+            box-sizing: border-box;
+        }
+
+        .history-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .history-scroll {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 16px;
+            padding-right: 8px;
+        }
+
+        .form-layout {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .form-layout .add-movement-card {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .ajustes-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            height: 100%;
+            overflow-y: auto;
+            padding-right: 4px;
+            box-sizing: border-box;
+        }
+
+        /* Estilización de Scrollbars */
+        .dashboard-left::-webkit-scrollbar,
+        .dashboard-right::-webkit-scrollbar,
+        .history-scroll::-webkit-scrollbar,
+        .ajustes-layout::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .dashboard-left::-webkit-scrollbar-thumb,
+        .dashboard-right::-webkit-scrollbar-thumb,
+        .history-scroll::-webkit-scrollbar-thumb,
+        .ajustes-layout::-webkit-scrollbar-thumb {
+            background-color: var(--border-card);
+            border-radius: 10px;
+        }
+
+        /* --- Estilos de Componentes --- */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: var(--card-radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-card);
+            box-sizing: border-box;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-card);
+            padding-bottom: 12px;
+        }
+
+        .card-title {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 1.05rem;
+            letter-spacing: -0.3px;
+        }
+
+        .summary-card .total {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .summary-card .currency {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .category-card .legend {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .history-card .search-bar {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--border-card);
+            padding: 10px 16px;
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .history-card .search-bar:focus {
+            border-color: var(--accent-primary);
+            background-color: var(--bg-card);
+            outline: none;
+            box-shadow: 0 0 0 3px var(--accent-primary-glow);
+        }
+
+        .transaction-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .date-group {
+            margin-bottom: 24px;
+        }
+
+        .date-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .date-label {
+            color: var(--text-secondary);
+            font-weight: 700;
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-label::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border-card);
+        }
+
+        .transaction-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 14px;
+            background-color: var(--bg-app);
+            margin-bottom: 10px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .transaction-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .transaction-item:hover {
+            background-color: var(--bg-card);
+            border-color: var(--border-card);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            margin-right: 14px;
+            flex-shrink: 0;
+        }
+
+        .transaction-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transaction-desc {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .transaction-time {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: 2px;
+        }
+
+        .transaction-amount {
+            font-weight: 700;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-right: 16px;
+            text-align: right;
+        }
+
+        .negative {
+            color: var(--accent-danger);
+        }
+
+        .actions {
+            color: var(--text-muted);
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+            align-items: center;
+        }
+
+        .actions i {
+            cursor: pointer;
+            transition: color 0.2s ease, transform 0.1s ease;
+            font-size: 0.95rem;
+            padding: 4px;
+        }
+
+        .actions i:hover {
+            transform: scale(1.1);
+        }
+
+        .actions .btn-editar:hover {
+            color: var(--accent-primary);
+        }
+
+        .actions .btn-eliminar:hover {
+            color: var(--accent-danger);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .input-control,
+        .select-control,
+        .date-input {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--border-card);
+            padding: 12px 16px;
+            box-sizing: border-box;
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+
+        .input-control:focus,
+        .select-control:focus,
+        .date-input:focus {
+            border-color: var(--accent-primary);
+            background-color: var(--bg-card);
+            box-shadow: 0 0 0 3px var(--accent-primary-glow);
+        }
+
+        .select-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        .add-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px var(--accent-primary-glow);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px var(--accent-primary-glow);
+        }
+
+        .add-btn:active {
+            transform: translateY(1px);
+        }
+
+        .time-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background-color: var(--bg-app);
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--border-card);
+        }
+
+        .time-filter-btn {
+            flex: 1;
+            border-radius: 8px;
+            border: none;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .time-filter-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .time-filter-btn.active {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .backup-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border-card);
+            background-color: var(--bg-app);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .backup-btn:hover {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-danger), #dc2626);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+        }
+
+        /* --- Estilos de Login --- */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 45%),
+                radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.06), transparent 45%),
+                var(--bg-app);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            padding: 48px 40px;
+            border-radius: var(--card-radius);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-card);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-sizing: border-box;
+            animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .login-title {
+            font-size: 1.8rem;
+            color: var(--text-primary);
+            margin: 0 0 12px 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .login-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 0 0 32px 0;
+            line-height: 1.5;
+        }
+
+        .login-input {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--border-card);
+            padding: 14px 20px;
+            box-sizing: border-box;
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            font-size: 1rem;
+            margin-bottom: 24px;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .login-input:focus {
+            border-color: var(--accent-primary);
+            background-color: var(--bg-card);
+            box-shadow: 0 0 0 3px var(--accent-primary-glow);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-hover));
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--accent-primary-glow);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px var(--accent-primary-glow);
+        }
+
+        /* --- Media Queries (Responsivo) --- */
+        @media (max-width: 900px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-left,
+            .dashboard-right {
+                height: auto;
+                overflow-y: visible;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .tablet-frame {
+                width: 100vw;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                border: none;
+                padding: 16px;
+            }
+
+            .tablet-screen {
+                flex-direction: column-reverse;
+                /* Sidebar at bottom */
+                gap: 16px;
+                height: calc(100% - 60px);
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                border-right: none;
+                border-top: 1px solid var(--border-card);
+                padding-right: 0;
+                padding-top: 8px;
+                justify-content: space-around;
+            }
+
+            .sidebar-menu {
+                flex-direction: row;
+                width: 100%;
+                justify-content: space-around;
+                gap: 0;
+            }
+
+            .sidebar-item {
+                flex-direction: column;
+                gap: 4px;
+                padding: 8px 12px;
+                font-size: 0.75rem;
+                align-items: center;
+                flex: 1;
+            }
+
+            .sidebar-item i {
+                font-size: 1.2rem;
+            }
+
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
+
+            .dashboard-left,
+            .dashboard-right {
+                height: auto;
+                overflow-y: visible;
+                padding-right: 0;
+            }
+
+            .ajustes-layout {
+                grid-template-columns: 1fr;
+            }
+
+            /* Alturas reales en móvil (100dvh evita el salto de la barra del navegador) */
+            .tablet-frame {
+                height: 100dvh;
+                max-height: 100dvh;
+                padding: 12px;
+            }
+
+            .header {
+                padding-bottom: 10px;
+                margin-bottom: 10px;
+            }
+
+            .header-title {
+                font-size: 1.05rem;
+            }
+
+            /* Totales y montos más compactos en pantalla chica */
+            .total {
+                font-size: 1.9rem !important;
+            }
+
+            .budget-remaining {
+                font-size: 1.9rem;
+            }
+
+            .summary-comparativa {
+                font-size: 0.75rem;
+            }
+
+            /* Calendario cómodo al tacto */
+            .cal-day {
+                font-size: 0.8rem;
+                border-radius: 8px;
+            }
+
+            .cal-legend {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            /* Historial: buscador a ancho completo */
+            .history-card .card-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .history-card .card-header > div {
+                width: 100% !important;
+                max-width: none !important;
+            }
+
+            /* Acciones de editar/eliminar siempre visibles y con área táctil */
+            .transaction-item .actions {
+                opacity: 1 !important;
+            }
+
+            .transaction-item .actions i {
+                padding: 8px;
+            }
+
+            /* Modal y toasts con margen en pantallas chicas */
+            .modal-card {
+                padding: 20px;
+            }
+
+            #toast-container {
+                width: calc(100vw - 32px);
+            }
+
+            .toast {
+                width: 100%;
+                box-sizing: border-box;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .sidebar-item span {
+                font-size: 0.65rem;
+            }
+
+            .total {
+                font-size: 1.6rem !important;
+            }
+
+            .budget-remaining {
+                font-size: 1.6rem;
+            }
+        }
+        /* --- Tarjeta de Tope de Gastos --- */
+        .budget-setup-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin: 0 0 16px 0;
+        }
+
+        .budget-edit-icon {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+        }
+
+        .budget-edit-icon:hover {
+            color: var(--accent-primary);
+        }
+
+        .budget-remaining {
+            font-size: 2.4rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin: 12px 0 16px 0;
+            transition: color 0.4s ease;
+        }
+
+        .budget-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--border-card);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .budget-bar-fill {
+            height: 100%;
+            width: 100%;
+            border-radius: 999px;
+            transition: width 0.5s ease, background-color 0.4s ease;
+        }
+
+        .budget-percent {
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: color 0.4s ease;
+            margin-bottom: 6px;
+        }
+
+        .budget-detail {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .budget-remove-btn {
+            margin-top: 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            transition: color 0.2s ease;
+        }
+
+        .budget-remove-btn:hover {
+            color: var(--accent-danger);
+        }
+
+        /* --- Botón "General" y contexto del resumen --- */
+        .general-btn {
+            background: var(--accent-primary);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            padding: 5px 14px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .general-btn:hover {
+            background: var(--accent-primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .summary-context {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .summary-comparativa {
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin: -6px 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* --- Calendario de Gastos --- */
+        .cal-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .cal-arrow {
+            background: transparent;
+            border: 1px solid var(--border-card);
+            color: var(--text-primary);
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+
+        .cal-arrow:hover {
+            background: var(--accent-primary);
+            color: #fff;
+            border-color: var(--accent-primary);
+        }
+
+        .cal-label {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .cal-label:hover {
+            background: var(--border-card);
+        }
+
+        .cal-picker {
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .cal-picker-year {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .cal-picker-months {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .cal-picker-month {
+            background: transparent;
+            border: 1px solid var(--border-card);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            padding: 8px 4px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .cal-picker-month:hover,
+        .cal-picker-month.activo {
+            background: var(--accent-primary);
+            color: #fff;
+            border-color: var(--accent-primary);
+        }
+
+        .cal-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .cal-weekdays span {
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .cal-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1.5px solid transparent;
+            color: var(--text-primary);
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .cal-day:hover:not(.vacio) {
+            border-color: var(--accent-primary);
+        }
+
+        .cal-day.vacio {
+            cursor: default;
+        }
+
+        .cal-day.gasto-bajo {
+            background: rgba(16, 185, 129, 0.30);
+        }
+
+        .cal-day.gasto-medio {
+            background: rgba(245, 158, 11, 0.35);
+        }
+
+        .cal-day.gasto-alto {
+            background: rgba(239, 68, 68, 0.40);
+        }
+
+        .cal-day.hoy {
+            border-color: var(--accent-primary);
+            font-weight: 700;
+        }
+
+        .cal-day.seleccionado {
+            background: var(--accent-primary);
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 0 0 3px var(--accent-primary-glow);
+        }
+
+        .cal-legend {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            margin-top: 12px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .cal-legend span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .cal-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* --- Modal de confirmación propio (reemplaza confirm() nativo) --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 28px;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            text-align: center;
+            animation: dropdownFadeIn 0.2s ease;
+        }
+
+        .modal-msg {
+            color: var(--text-primary);
+            font-size: 1rem;
+            margin: 0 0 24px 0;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.95rem;
+            flex: 1;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn-cancel {
+            background: transparent;
+            border: 1px solid var(--border-card);
+            color: var(--text-secondary);
+        }
+
+        .modal-btn-confirm {
+            background: var(--accent-danger);
+            color: #fff;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* --- Toasts de notificación (reemplazan alert() nativo) --- */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-card);
+            border-left: 4px solid var(--accent-primary);
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            font-size: 0.9rem;
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            animation: toastIn 0.25s ease;
+        }
+
+        .toast.success { border-left-color: var(--accent-success); }
+        .toast.warning { border-left-color: var(--accent-warning); }
+        .toast.error { border-left-color: var(--accent-danger); }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: none; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Overlay de Inicio de Sesión -->
+    <div class="login-overlay" id="login-overlay">
+        <div class="login-card">
+            <h2 class="login-title">Mi Balance Mensual</h2>
+            <p class="login-subtitle">Gestión inteligente de gastos personales. Ingresa tu nombre para comenzar.</p>
+            <form id="login-form">
+                <input type="text" id="login-username" class="login-input" placeholder="Nombre de usuario (ej: Ian)"
+                    required autocomplete="off">
+                <button type="submit" class="login-btn">Ingresar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación -->
+    <div class="modal-overlay" id="modal-confirm">
+        <div class="modal-card">
+            <p class="modal-msg" id="modal-msg"></p>
+            <div class="modal-actions">
+                <button type="button" class="modal-btn modal-btn-cancel" id="modal-btn-cancel">Cancelar</button>
+                <button type="button" class="modal-btn modal-btn-confirm" id="modal-btn-ok">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    <!-- Contenedor de notificaciones -->
+    <div id="toast-container"></div>
+
+    <div class="tablet-frame">
+        <!-- Cabecera -->
+        <header class="header">
+            <div class="header-left">
+                <i class="fas fa-wallet" style="color: var(--accent-primary); font-size: 1.4rem;"></i>
+                <span class="header-title">Mi Balance Mensual</span>
+            </div>
+            <div class="header-right">
+                <button id="theme-toggle" class="theme-toggle-btn" title="Cambiar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="avatar-container" id="avatar-container">
+                    <div class="avatar" id="user-avatar" title="Opciones de usuario">I</div>
+                    <div class="user-dropdown" id="user-dropdown">
+                        <div class="dropdown-header">
+                            Usuario activo
+                            <div class="dropdown-user-name" id="dropdown-user-name">Ian</div>
+                        </div>
+                        <div class="dropdown-item" id="btn-dropdown-ajustes">
+                            <i class="fas fa-sliders-h"></i> Ajustes
+                        </div>
+                        <div class="dropdown-item danger-hover" id="btn-logout">
+                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Pantalla de la aplicación -->
+        <div class="tablet-screen">
+            <!-- Barra Lateral (Sidebar) -->
+            <aside class="sidebar">
+                <nav class="sidebar-menu">
+                    <div class="sidebar-item active" data-tab="tab-dashboard">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Resumen</span>
+                    </div>
+                    <div class="sidebar-item" data-tab="tab-historial">
+                        <i class="fas fa-history"></i>
+                        <span>Historial</span>
+                    </div>
+                    <div class="sidebar-item" data-tab="tab-agregar" id="sidebar-registrar-btn">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Registrar</span>
+                    </div>
+                    <div class="sidebar-item" data-tab="tab-ajustes">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Ajustes</span>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Panel de Contenido de Pestañas -->
+            <main class="content-pane">
+                <!-- 1. Pestaña Dashboard -->
+                <section class="tab-pane active" id="tab-dashboard">
+                    <div class="dashboard-layout">
+                        <!-- Lado Izquierdo (Resumen y Gráficos) -->
+                        <div class="dashboard-left">
+                            <div class="card summary-card">
+                                <header class="card-header">
+                                    <span class="card-title">Resumen de Gastos</span>
+                                    <button type="button" id="btn-vista-general" class="general-btn"
+                                        style="display: none;">General</button>
+                                </header>
+                                <div class="summary-context" id="summary-context">Total de todos los gastos</div>
+                                <div class="total" id="total-balance">$0 <span class="currency">CLP</span></div>
+                                <div class="summary-comparativa" id="summary-comparativa" style="display: none;"></div>
+                                <canvas id="summaryChart" width="200" height="100"></canvas>
+                            </div>
+
+                        </div>
+
+                        <!-- Lado Derecho (Tope de Gastos del Mes) -->
+                        <div class="dashboard-right">
+                            <div class="card budget-card">
+                                <header class="card-header">
+                                    <span class="card-title">Tope de Gastos del Mes</span>
+                                    <i class="fas fa-pencil-alt budget-edit-icon" id="btn-editar-tope"
+                                        title="Cambiar tope" style="display: none;"></i>
+                                </header>
+
+                                <!-- Estado 1: sin tope definido -->
+                                <div id="budget-setup">
+                                    <p class="budget-setup-text">
+                                        Define un monto máximo de gastos para este mes. A medida que registres
+                                        movimientos, verás cuánto te queda disponible.
+                                    </p>
+                                    <div class="form-group">
+                                        <label for="input-tope">Tope mensual ($)</label>
+                                        <input type="text" id="input-tope" class="input-control"
+                                            placeholder="Ej. 300.000" autocomplete="off">
+                                    </div>
+                                    <button type="button" id="btn-guardar-tope" class="add-btn">Establecer
+                                        Tope</button>
+                                </div>
+
+                                <!-- Estado 2: tope activo -->
+                                <div id="budget-status" style="display: none;">
+                                    <div class="budget-remaining" id="budget-remaining">$0</div>
+                                    <div class="budget-bar">
+                                        <div class="budget-bar-fill" id="budget-bar-fill"></div>
+                                    </div>
+                                    <div class="budget-percent" id="budget-percent">100% del tope disponible</div>
+                                    <div class="budget-detail" id="budget-detail"></div>
+                                    <button type="button" id="btn-quitar-tope" class="budget-remove-btn">Quitar
+                                        tope</button>
+                                </div>
+                            </div>
+
+                            <div class="card calendar-card">
+                                <header class="card-header">
+                                    <span class="card-title">Calendario de Gastos</span>
+                                </header>
+                                <div class="cal-nav">
+                                    <button type="button" class="cal-arrow" id="cal-prev" title="Mes anterior">&lsaquo;</button>
+                                    <button type="button" class="cal-label" id="cal-label"
+                                        title="Cambiar mes y año">Mes Año</button>
+                                    <button type="button" class="cal-arrow" id="cal-next" title="Mes siguiente">&rsaquo;</button>
+                                </div>
+                                <div class="cal-picker" id="cal-picker" style="display: none;">
+                                    <div class="cal-picker-year">
+                                        <button type="button" class="cal-arrow" id="cal-year-prev">&lsaquo;</button>
+                                        <span id="cal-year-label">2026</span>
+                                        <button type="button" class="cal-arrow" id="cal-year-next">&rsaquo;</button>
+                                    </div>
+                                    <div class="cal-picker-months" id="cal-picker-months"></div>
+                                </div>
+                                <div class="cal-weekdays">
+                                    <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                                </div>
+                                <div class="cal-grid" id="cal-grid"></div>
+                                <div class="cal-legend">
+                                    <span><i class="cal-dot" style="background: var(--accent-success);"></i> Gasto bajo</span>
+                                    <span><i class="cal-dot" style="background: var(--accent-warning);"></i> Medio</span>
+                                    <span><i class="cal-dot" style="background: var(--accent-danger);"></i> Alto</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. Pestaña Historial -->
+                <section class="tab-pane" id="tab-historial">
+                    <div class="history-layout">
+                        <div class="card history-card history-card-full">
+                            <header class="card-header">
+                                <span class="card-title">Historial Completo</span>
+                                <div
+                                    style="display: flex; gap: 10px; align-items: center; width: 50%; max-width: 300px;">
+                                    <input type="search" id="search-input" class="search-bar"
+                                        placeholder="Buscar movimientos...">
+                                </div>
+                            </header>
+                            <div class="history-scroll">
+                                <ul id="history-list" class="transaction-list">
+                                    <!-- Generado dinámicamente -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Pestaña Registrar Movimiento -->
+                <section class="tab-pane" id="tab-agregar">
+                    <div class="form-layout">
+                        <div class="card add-movement-card">
+                            <header class="card-header">
+                                <span class="card-title" id="form-title">Registrar Nuevo Movimiento</span>
+                            </header>
+                            <form id="transaction-form">
+                                <div class="form-group">
+                                    <label for="monto">Monto ($)</label>
+                                    <input type="text" id="monto" class="input-control" placeholder="Monto" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="descripcion">Descripción</label>
+                                    <input type="text" id="descripcion" class="input-control"
+                                        placeholder="Ej. Almuerzo rápido" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="categoria">Categoría</label>
+                                    <select id="categoria" class="select-control">
+                                        <option value="alimentos">Alimentos</option>
+                                        <option value="transporte">Transporte</option>
+                                        <option value="hogar">Hogar</option>
+                                        <option value="ocio">Ocio</option>
+                                        <option value="otros">Otros</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="fecha">Fecha</label>
+                                    <input type="date" id="fecha" class="date-input" required>
+                                </div>
+                                <div style="display: flex; gap: 12px; margin-top: 12px; width: 100%;">
+                                    <button type="submit" id="submit-btn" class="add-btn"
+                                        style="width: auto; flex: 1; margin-top: 0;">Guardar Movimiento</button>
+                                    <button type="button" id="cancel-btn" class="backup-btn"
+                                        style="display: none; border-color: var(--accent-danger); color: var(--accent-danger); margin-top: 0; padding: 14px; border-radius: 14px; font-size: 0.95rem; flex: 1;">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. Pestaña Ajustes -->
+                <section class="tab-pane" id="tab-ajustes">
+                    <div class="ajustes-layout">
+                        <!-- Columna Izquierda (Preferencias) -->
+                        <div class="card">
+                            <header class="card-header">
+                                <span class="card-title">Preferencias</span>
+                            </header>
+                            <div class="form-group">
+                                <label for="select-divisa">Divisa de Visualización</label>
+                                <select id="select-divisa" class="select-control">
+                                    <option value="CLP">Peso Chileno (CLP)</option>
+                                    <option value="USD">Dólar Estadounidense (USD)</option>
+                                    <option value="EUR">Euro (EUR)</option>
+                                </select>
+                            </div>
+                            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-card);">
+                                <label
+                                    style="display: block; color: var(--text-secondary); margin-bottom: 12px; font-size: 0.85rem; font-weight: 600;">Datos
+                                    del Aplicativo</label>
+                                <p
+                                    style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin: 0 0 16px 0;">
+                                    Borra todas tus transacciones almacenadas y restaura la configuración original de
+                                    fábrica.
+                                </p>
+                                <button id="btn-limpiar" class="add-btn btn-danger">
+                                    <i class="fas fa-trash-alt" style="margin-right: 6px;"></i> Eliminar Todos los Datos
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Columna Derecha (Copia de Seguridad) -->
+                        <div class="card">
+                            <header class="card-header">
+                                <span class="card-title">Copia de Seguridad</span>
+                            </header>
+                            <p
+                                style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 20px 0; line-height: 1.5;">
+                                Los datos se guardan automáticamente en tu navegador. Puedes exportar un respaldo
+                                completo en formato JSON para transferirlo a otro dispositivo o recuperarlo después.
+                            </p>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <button id="btn-exportar" class="backup-btn" style="padding: 12px 16px;">
+                                    <i class="fas fa-download"></i> Exportar Datos (JSON)
+                                </button>
+                                <button id="btn-exportar-csv" class="backup-btn" style="padding: 12px 16px;">
+                                    <i class="fas fa-file-csv"></i> Exportar a Excel (CSV)
+                                </button>
+                                <button id="btn-importar-trigger" class="backup-btn" style="padding: 12px 16px;">
+                                    <i class="fas fa-upload"></i> Importar Copia de Seguridad
+                                </button>
+                                <input type="file" id="input-importar" style="display: none;" accept=".json">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Definición del Estado e Inicialización ---
+        // Wrapper de almacenamiento: usa localStorage si está disponible;
+        // si el navegador lo bloquea (sandbox, cookies deshabilitadas), usa memoria como respaldo
+        const almacen = (() => {
+            try {
+                const k = '__test_storage__';
+                localStorage.setItem(k, '1');
+                localStorage.removeItem(k);
+                return localStorage;
+            } catch (err) {
+                console.warn('localStorage no disponible; los datos NO persistirán entre sesiones.', err);
+                const memoria = {};
+                return {
+                    getItem: (k) => (k in memoria ? memoria[k] : null),
+                    setItem: (k, v) => { memoria[k] = String(v); },
+                    removeItem: (k) => { delete memoria[k]; }
+                };
+            }
+        })();
+
+        let currentUser = almacen.getItem('gastos_current_user') || null;
+        let transacciones = [];
+        let idEdicion = null;
+        let currentTheme = almacen.getItem('gastos_theme') || 'light';
+        let topeMensual = 0; // tope de gastos del mes (en CLP), por usuario
+        let diaSeleccionado = null; // día elegido en el calendario (YYYY-MM-DD) o null = vista general
+        const fechaCalRef = new Date(); // mes/año que muestra el calendario
+        let mesCalendario = fechaCalRef.getMonth();
+        let anioCalendario = fechaCalRef.getFullYear();
+        const NOMBRES_MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        let divisaActual = almacen.getItem('gastos_currency') || 'CLP';
+
+        // Aplicar tema inicial
+        document.documentElement.setAttribute('data-theme', currentTheme);
+
+        // Conversión de Divisas
+        const tasasConversion = {
+            CLP: 1,
+            USD: 0.00108, // 1 USD = 925 CLP aprox.
+            EUR: 0.00100  // 1 EUR = 1000 CLP aprox.
+        };
+
+        const simbolosDivisa = {
+            CLP: '$',
+            USD: 'US$',
+            EUR: '€'
+        };
+
+        // Fecha de hoy calculada al momento de usarla (evita desfase si la app queda abierta pasada la medianoche)
+        function obtenerHoyYMD() {
+            const d = new Date();
+            const off = d.getTimezoneOffset();
+            return new Date(d.getTime() - (off * 60 * 1000)).toISOString().split('T')[0];
+        }
+
+        // Función auxiliar para obtener fecha de días atrás (zona horaria local)
+        function obtenerFechaRelativa(diasAtras) {
+            const d = new Date();
+            d.setDate(d.getDate() - diasAtras);
+            const off = d.getTimezoneOffset();
+            const localD = new Date(d.getTime() - (off * 60 * 1000));
+            return localD.toISOString().split('T')[0];
+        }
+
+        // Elementos del DOM de Sesión y Usuario
+        const loginOverlay = document.getElementById('login-overlay');
+        const loginForm = document.getElementById('login-form');
+        const loginUsernameInput = document.getElementById('login-username');
+        const userAvatar = document.getElementById('user-avatar');
+        const userDropdown = document.getElementById('user-dropdown');
+        const dropdownUserName = document.getElementById('dropdown-user-name');
+        const btnLogout = document.getElementById('btn-logout');
+        const btnDropdownAjustes = document.getElementById('btn-dropdown-ajustes');
+        const avatarContainer = document.getElementById('avatar-container');
+
+        // Elementos del DOM de Transacciones
+        const form = document.getElementById('transaction-form');
+        const formTitle = document.getElementById('form-title');
+        const inputMonto = document.getElementById('monto');
+        const inputDescripcion = document.getElementById('descripcion');
+        const selectCategoria = document.getElementById('categoria');
+        const inputFecha = document.getElementById('fecha');
+        const submitBtn = document.getElementById('submit-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const totalBalanceEl = document.getElementById('total-balance');
+        const historyListEl = document.getElementById('history-list');
+        const searchInput = document.getElementById('search-input');
+        const selectDivisa = document.getElementById('select-divisa');
+
+        // Establecer divisa inicial seleccionada
+        selectDivisa.value = divisaActual;
+
+        // Establecer fecha por defecto en el formulario
+        inputFecha.value = obtenerHoyYMD();
+
+        // Instancias de Gráficos (Chart.js)
+        let summaryChart;
+        
+        // --- 2. Lógica de Usuario y Flujo de Sesión ---
+        function obtenerColorPorNombre(nombre) {
+            let hash = 0;
+            for (let i = 0; i < nombre.length; i++) {
+                hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash % 360);
+            return `hsl(${hue}, 65%, 45%)`;
+        }
+
+        function guardarEnLocalStorage() {
+            if (!currentUser) return;
+            try {
+                almacen.setItem(`gastos_transactions_${currentUser}`, JSON.stringify(transacciones));
+            } catch (err) {
+                console.error('Error al guardar en localStorage:', err);
+                notificar('No se pudieron guardar los datos (almacenamiento lleno o bloqueado)', 'error');
+            }
+        }
+
+        function cargarDatosDeUsuario() {
+            if (!currentUser) return;
+
+            let datosGuardados = null;
+            try {
+                datosGuardados = JSON.parse(almacen.getItem(`gastos_transactions_${currentUser}`));
+            } catch (err) {
+                console.error('Datos corruptos en localStorage, se reinician:', err);
+                datosGuardados = null;
+            }
+            transacciones = Array.isArray(datosGuardados) ? datosGuardados : [];
+
+            // Cargar datos de ejemplo SOLO la primera vez que el usuario entra
+            // (el flag evita que los ejemplos "revivan" tras borrar todos los movimientos)
+            const yaInicializado = almacen.getItem(`gastos_seeded_${currentUser}`) === '1';
+            if (transacciones.length === 0 && !yaInicializado) {
+                transacciones = [
+                    { id: '1', monto: 12500, descripcion: 'Alimentos', categoria: 'alimentos', fecha: obtenerHoyYMD() },
+                    { id: '2', monto: 12500, descripcion: 'Transporte', categoria: 'transporte', fecha: obtenerFechaRelativa(1) },
+                    { id: '3', monto: 12500, descripcion: 'Ej. Almuerzo rápido', categoria: 'hogar', fecha: obtenerFechaRelativa(1) },
+                    { id: '4', monto: 7500, descripcion: 'Alimentos', categoria: 'alimentos', fecha: obtenerFechaRelativa(1) },
+                    { id: '5', monto: 45000, descripcion: 'Servicios Básicos', categoria: 'hogar', fecha: obtenerFechaRelativa(3) },
+                    { id: '6', monto: 18000, descripcion: 'Salida al cine', categoria: 'ocio', fecha: obtenerFechaRelativa(4) },
+                    { id: '7', monto: 9500, descripcion: 'Taxi', categoria: 'transporte', fecha: obtenerFechaRelativa(5) },
+                    { id: '8', monto: 35000, descripcion: 'Supermercado semanal', categoria: 'alimentos', fecha: obtenerFechaRelativa(6) },
+                    { id: '9', monto: 12000, descripcion: 'Suscripciones', categoria: 'otros', fecha: obtenerFechaRelativa(7) }
+                ];
+                guardarEnLocalStorage();
+            }
+            almacen.setItem(`gastos_seeded_${currentUser}`, '1');
+        }
+
+        function iniciarSesion(nombre) {
+            currentUser = nombre.trim();
+            almacen.setItem('gastos_current_user', currentUser);
+
+            loginOverlay.style.display = 'none';
+
+            userAvatar.textContent = currentUser.charAt(0).toUpperCase();
+            userAvatar.style.backgroundColor = obtenerColorPorNombre(currentUser);
+            dropdownUserName.textContent = currentUser;
+
+            cargarDatosDeUsuario();
+            topeMensual = Number(almacen.getItem(`gastos_budget_${currentUser}`)) || 0;
+            diaSeleccionado = null;
+            mesCalendario = new Date().getMonth();
+            anioCalendario = new Date().getFullYear();
+            renderizarTodo();
+            procesarGastoPendienteURL();
+        }
+
+        async function cerrarSesion() {
+            const ok = await confirmar('¿Deseas cerrar tu sesión actual?');
+            if (ok) {
+                currentUser = null;
+                almacen.removeItem('gastos_current_user');
+
+                loginOverlay.style.display = 'flex';
+                loginUsernameInput.value = '';
+
+                transacciones = [];
+                idEdicion = null;
+                topeMensual = 0;
+                diaSeleccionado = null;
+                mesCalendario = new Date().getMonth();
+                anioCalendario = new Date().getFullYear();
+                form.reset();
+                inputFecha.value = obtenerHoyYMD();
+                formTitle.textContent = 'Registrar Nuevo Movimiento';
+                submitBtn.textContent = 'Guardar Movimiento';
+                submitBtn.style.background = '';
+                submitBtn.style.boxShadow = '';
+
+                userDropdown.classList.remove('show');
+            }
+        }
+
+        // --- UI propia: confirmación y notificaciones (independientes de confirm/alert nativos) ---
+        function confirmar(mensaje) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('modal-confirm');
+                const btnOk = document.getElementById('modal-btn-ok');
+                const btnCancel = document.getElementById('modal-btn-cancel');
+                document.getElementById('modal-msg').textContent = mensaje;
+                overlay.classList.add('show');
+                const cerrar = (resultado) => {
+                    overlay.classList.remove('show');
+                    btnOk.onclick = null;
+                    btnCancel.onclick = null;
+                    overlay.onclick = null;
+                    resolve(resultado);
+                };
+                btnOk.onclick = () => cerrar(true);
+                btnCancel.onclick = () => cerrar(false);
+                overlay.onclick = (e) => { if (e.target === overlay) cerrar(false); };
+            });
+        }
+
+        function notificar(mensaje, tipo = 'info') {
+            const cont = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = `toast ${tipo}`;
+            t.textContent = mensaje;
+            cont.appendChild(t);
+            setTimeout(() => t.remove(), 3200);
+        }
+
+        // --- 3. Formateadores Auxiliares ---
+        // Escapa caracteres HTML para prevenir XSS al renderizar contenido del usuario
+        function escaparHTML(texto) {
+            return String(texto)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function parsearMonto(valorStr) {
+            const limpio = valorStr.replace(/[^0-9]/g, '');
+            return parseInt(limpio, 10) || 0;
+        }
+
+        function formatearMoneda(montoCLP) {
+            const tasa = tasasConversion[divisaActual] || 1;
+            const montoConvertido = montoCLP * tasa;
+
+            if (divisaActual === 'CLP') {
+                return new Intl.NumberFormat('es-CL', {
+                    style: 'currency',
+                    currency: 'CLP',
+                    minimumFractionDigits: 0
+                }).format(montoConvertido) + ' CLP';
+            } else if (divisaActual === 'USD') {
+                return 'US$' + new Intl.NumberFormat('en-US', {
+                    style: 'decimal',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(montoConvertido);
+            } else { // EUR
+                return '€' + new Intl.NumberFormat('de-DE', {
+                    style: 'decimal',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(montoConvertido);
+            }
+        }
+
+        function formatearFechaLegible(fechaStr) {
+            const [year, month, day] = fechaStr.split('-').map(Number);
+            const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            return `${day} ${meses[month - 1]}`;
+        }
+
+        function obtenerEtiquetaFecha(fechaStr) {
+            const hoyLocal = new Date();
+            hoyLocal.setHours(0, 0, 0, 0);
+
+            const ayerLocal = new Date(hoyLocal);
+            ayerLocal.setDate(ayerLocal.getDate() - 1);
+
+            const [year, month, day] = fechaStr.split('-').map(Number);
+            const fechaTrans = new Date(year, month - 1, day);
+            fechaTrans.setHours(0, 0, 0, 0);
+
+            if (fechaTrans.getTime() === hoyLocal.getTime()) {
+                return 'HOY';
+            } else if (fechaTrans.getTime() === ayerLocal.getTime()) {
+                return 'AYER';
+            } else {
+                const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                return `${day} DE ${meses[month - 1]}`.toUpperCase();
+            }
+        }
+
+        // --- 4. Gestión de Colores de Gráficos y Tema ---
+        function obtenerColoresDeTema() {
+            const esOscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+            return {
+                textColor: esOscuro ? '#cbd5e1' : '#475569',
+                gridColor: esOscuro ? 'rgba(148, 163, 184, 0.1)' : 'rgba(226, 232, 240, 0.8)',
+                borderColor: esOscuro ? '#3b82f6' : '#3b82f6',
+                backgroundColor: esOscuro ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.05)',
+                pieColors: esOscuro ?
+                    ['#3b82f6', '#34d399', '#fbbf24', '#f87171', '#64748b'] :
+                    ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#94a3b8']
+            };
+        }
+
+        function actualizarColoresGraficos() {
+            if (!summaryChart) return;
+            const colores = obtenerColoresDeTema();
+
+            summaryChart.data.datasets[0].borderColor = colores.borderColor;
+            summaryChart.data.datasets[0].backgroundColor = colores.backgroundColor;
+            summaryChart.options.scales.x.ticks.color = colores.textColor;
+            summaryChart.options.scales.x.grid.color = colores.gridColor;
+            summaryChart.options.scales.y.ticks.color = colores.textColor;
+            summaryChart.options.scales.y.grid.color = colores.gridColor;
+            summaryChart.update();
+
+            actualizarGraficos();
+        }
+
+        // --- 5. Renderizado de Gráficos ---
+        function inicializarGraficos() {
+            if (typeof Chart === 'undefined') {
+                console.warn('Chart.js no se pudo cargar; la app funcionará sin gráficos.');
+                return;
+            }
+            const colores = obtenerColoresDeTema();
+
+            const summaryCtx = document.getElementById('summaryChart').getContext('2d');
+            summaryChart = new Chart(summaryCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Gastos',
+                        data: [],
+                        backgroundColor: colores.backgroundColor,
+                        borderColor: colores.borderColor,
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: colores.textColor,
+                                callback: (value) => {
+                                    if (divisaActual === 'CLP') return '$' + Math.round(value).toLocaleString();
+                                    return simbolosDivisa[divisaActual] + value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                }
+                            },
+                            grid: { color: colores.gridColor }
+                        },
+                        x: {
+                            ticks: { color: colores.textColor },
+                            grid: { color: colores.gridColor }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+        }
+
+        function actualizarGraficos() {
+            if (!summaryChart) return;
+            const tasa = tasasConversion[divisaActual] || 1;
+
+            // Vista de un día concreto: cada gasto de ese día como punto del gráfico
+            if (diaSeleccionado) {
+                const delDia = transacciones
+                    .filter(t => t.fecha === diaSeleccionado)
+                    .sort((a, b) => Number(b.monto) - Number(a.monto));
+                summaryChart.data.labels = delDia.map(t =>
+                    t.descripcion.length > 14 ? t.descripcion.slice(0, 14) + '…' : t.descripcion);
+                summaryChart.data.datasets[0].data = delDia.map(t => Number(t.monto) * tasa);
+                summaryChart.update();
+                return;
+            }
+
+            const gastosPorFecha = {};
+            transacciones.forEach(t => gastosPorFecha[t.fecha] = (gastosPorFecha[t.fecha] || 0) + Number(t.monto));
+
+            const fechasOrdenadas = Object.keys(gastosPorFecha).sort();
+            const ultimasFechas = fechasOrdenadas.slice(-8);
+            const mesesAbreviados = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+            summaryChart.data.labels = ultimasFechas.map(f => {
+                const [y, m, d] = f.split('-').map(Number);
+                return `${d} ${mesesAbreviados[m - 1]}`;
+            });
+            summaryChart.data.datasets[0].data = ultimasFechas.map(f => gastosPorFecha[f] * tasa);
+            summaryChart.update();
+        }
+
+        // --- 6. Renderizado de Listas e Interfaz ---
+        function comparativaMensual() {
+            const ahora = new Date();
+            const y = ahora.getFullYear();
+            const m = ahora.getMonth();
+            const d = ahora.getDate();
+            const mesPrev = m === 0 ? 11 : m - 1;
+            const anioPrev = m === 0 ? y - 1 : y;
+
+            let actual = 0, anterior = 0;
+            transacciones.forEach(t => {
+                const [ty, tm, td] = t.fecha.split('-').map(Number);
+                if (ty === y && (tm - 1) === m && td <= d) actual += Number(t.monto);
+                else if (ty === anioPrev && (tm - 1) === mesPrev && td <= d) anterior += Number(t.monto);
+            });
+            return { actual, anterior, nombreMesPrev: NOMBRES_MESES[mesPrev] };
+        }
+
+        function actualizarComparativa() {
+            const el = document.getElementById('summary-comparativa');
+            // Solo tiene sentido en la vista general y si hubo gastos el mes pasado
+            const { actual, anterior, nombreMesPrev } = comparativaMensual();
+            if (diaSeleccionado || anterior <= 0) {
+                el.style.display = 'none';
+                return;
+            }
+            el.style.display = 'flex';
+            const pct = Math.round(((actual - anterior) / anterior) * 100);
+            if (pct > 0) {
+                el.innerHTML = `<i class="fas fa-arrow-trend-up"></i> Vas gastando ${pct}% más que en ${nombreMesPrev} a esta altura del mes`;
+                el.style.color = 'var(--accent-danger)';
+            } else if (pct < 0) {
+                el.innerHTML = `<i class="fas fa-arrow-trend-down"></i> Vas gastando ${Math.abs(pct)}% menos que en ${nombreMesPrev} a esta altura del mes`;
+                el.style.color = 'var(--accent-success)';
+            } else {
+                el.innerHTML = `<i class="fas fa-equals"></i> Vas gastando igual que en ${nombreMesPrev} a esta altura del mes`;
+                el.style.color = 'var(--text-secondary)';
+            }
+        }
+
+        function actualizarResumen() {
+            const fuente = diaSeleccionado
+                ? transacciones.filter(t => t.fecha === diaSeleccionado)
+                : transacciones;
+            const total = fuente.reduce((sum, t) => sum + Number(t.monto), 0);
+            totalBalanceEl.innerHTML = `${formatearMoneda(total)}`;
+
+            const ctxEl = document.getElementById('summary-context');
+            const btnGeneral = document.getElementById('btn-vista-general');
+            if (diaSeleccionado) {
+                const [y, m, d] = diaSeleccionado.split('-').map(Number);
+                ctxEl.textContent = `Gastos del ${d} de ${NOMBRES_MESES[m - 1]} ${y}`;
+                btnGeneral.style.display = 'inline-flex';
+            } else {
+                ctxEl.textContent = 'Total de todos los gastos';
+                btnGeneral.style.display = 'none';
+            }
+            actualizarComparativa();
+        }
+
+        const configCategorias = {
+            alimentos: { color: 'var(--accent-primary)', icon: 'fas fa-utensils' },
+            transporte: { color: 'var(--accent-success)', icon: 'fas fa-car' },
+            hogar: { color: 'var(--accent-warning)', icon: 'fas fa-home' },
+            ocio: { color: '#f87171', icon: 'fas fa-gamepad' },
+            otros: { color: 'var(--text-muted)', icon: 'fas fa-ellipsis-h' }
+        };
+
+        // Plantilla única para items de transacción (con escape XSS y sin handlers inline)
+        function plantillaTransaccion(t, cat) {
+            return `
+                            <div class="transaction-item" data-id="${escaparHTML(t.id)}">
+                                <div class="category-icon" style="background-color: ${cat.color};"><i class="${cat.icon}"></i></div>
+                                <div class="transaction-info">
+                                    <span class="transaction-desc">${escaparHTML(t.descripcion)}</span>
+                                    <span class="transaction-time">${formatearFechaLegible(t.fecha)}</span>
+                                </div>
+                                <div class="transaction-amount negative">-${formatearMoneda(t.monto)}</div>
+                                <div class="actions">
+                                    <i class="fas fa-pencil-alt btn-editar" title="Editar"></i>
+                                    <i class="fas fa-trash btn-eliminar" title="Eliminar"></i>
+                                </div>
+                            </div>`;
+        }
+
+        function renderizarHistorial() {
+            const query = searchInput.value.toLowerCase().trim();
+            const filtradas = transacciones.filter(t => t.descripcion.toLowerCase().includes(query) || t.categoria.toLowerCase().includes(query));
+            const grupos = {};
+            [...filtradas].sort((a, b) => b.fecha.localeCompare(a.fecha)).forEach(t => {
+                if (!grupos[t.fecha]) grupos[t.fecha] = [];
+                grupos[t.fecha].push(t);
+            });
+
+            if (Object.keys(grupos).length === 0) {
+                historyListEl.innerHTML = '<li style="text-align: center; color: var(--text-muted); padding: 20px;">No se encontraron movimientos</li>';
+                return;
+            }
+
+            historyListEl.innerHTML = Object.keys(grupos).map(fecha => `
+                <li class="date-group">
+                    <div class="date-label">${obtenerEtiquetaFecha(fecha)}</div>
+                    ${grupos[fecha].map(t => {
+                const cat = configCategorias[t.categoria] || configCategorias.otros;
+                return plantillaTransaccion(t, cat);
+            }).join('')}
+                </li>`).join('');
+        }
+
+        // --- Tope de Gastos del Mes ---
+        function gastosDelMesActual() {
+            const ahora = new Date();
+            const y = ahora.getFullYear();
+            const m = ahora.getMonth();
+            return transacciones.reduce((sum, t) => {
+                const [ty, tm] = t.fecha.split('-').map(Number);
+                return (ty === y && (tm - 1) === m) ? sum + Number(t.monto) : sum;
+            }, 0);
+        }
+
+        function pctRestanteTope() {
+            if (!topeMensual || topeMensual <= 0) return null;
+            return Math.round(((topeMensual - gastosDelMesActual()) / topeMensual) * 100);
+        }
+
+        // Avisa cuando un movimiento hace CRUZAR un umbral (50%, 20% o exceder el tope)
+        function avisarCruceUmbral(pctAntes, pctDespues) {
+            if (pctAntes === null || pctDespues === null) return;
+            if (pctAntes > 0 && pctDespues <= 0) {
+                notificar('Superaste el tope de gastos del mes', 'error');
+            } else if (pctAntes > 20 && pctDespues <= 20) {
+                notificar(`Ojo: te queda solo el ${pctDespues}% del tope`, 'error');
+            } else if (pctAntes > 50 && pctDespues <= 50) {
+                notificar(`Atención: te queda el ${pctDespues}% del tope`, 'warning');
+            }
+        }
+
+        function actualizarTope() {
+            const setup = document.getElementById('budget-setup');
+            const status = document.getElementById('budget-status');
+            const btnEditar = document.getElementById('btn-editar-tope');
+
+            if (!topeMensual || topeMensual <= 0) {
+                setup.style.display = 'block';
+                status.style.display = 'none';
+                btnEditar.style.display = 'none';
+                return;
+            }
+
+            setup.style.display = 'none';
+            status.style.display = 'block';
+            btnEditar.style.display = 'inline-block';
+
+            const gastado = gastosDelMesActual();
+            const restante = topeMensual - gastado;
+            const pct = Math.max(0, Math.round((restante / topeMensual) * 100));
+
+            // Verde > 50% | Amarillo 21-50% | Rojo <= 20% o excedido
+            let color;
+            if (restante <= 0 || pct <= 20) color = 'var(--accent-danger)';
+            else if (pct <= 50) color = 'var(--accent-warning)';
+            else color = 'var(--accent-success)';
+
+            const remEl = document.getElementById('budget-remaining');
+            remEl.textContent = (restante < 0 ? '-' : '') + formatearMoneda(Math.abs(restante));
+            remEl.style.color = color;
+
+            const fill = document.getElementById('budget-bar-fill');
+            fill.style.width = pct + '%';
+            fill.style.backgroundColor = color;
+
+            const pctEl = document.getElementById('budget-percent');
+            pctEl.textContent = restante < 0 ? 'Tope del mes excedido' : `${pct}% del tope disponible`;
+            pctEl.style.color = color;
+
+            document.getElementById('budget-detail').textContent =
+                `Gastado este mes: ${formatearMoneda(gastado)} de ${formatearMoneda(topeMensual)}`;
+        }
+
+        // --- Calendario de Gastos ---
+        function gastosPorDiaDelMes(anio, mes) {
+            const mapa = {};
+            transacciones.forEach(t => {
+                const [y, m, d] = t.fecha.split('-').map(Number);
+                if (y === anio && (m - 1) === mes) mapa[d] = (mapa[d] || 0) + Number(t.monto);
+            });
+            return mapa;
+        }
+
+        function renderizarCalendario() {
+            const grid = document.getElementById('cal-grid');
+            const label = document.getElementById('cal-label');
+            label.textContent = `${NOMBRES_MESES[mesCalendario]} ${anioCalendario}`;
+
+            const gastosDia = gastosPorDiaDelMes(anioCalendario, mesCalendario);
+            const maxGasto = Math.max(0, ...Object.values(gastosDia));
+
+            const primerDia = new Date(anioCalendario, mesCalendario, 1);
+            const diasEnMes = new Date(anioCalendario, mesCalendario + 1, 0).getDate();
+            const offset = (primerDia.getDay() + 6) % 7; // semana inicia en lunes
+
+            const hoy = new Date();
+            const esMesActual = hoy.getFullYear() === anioCalendario && hoy.getMonth() === mesCalendario;
+            const hoyDia = hoy.getDate();
+
+            let htmlCal = '';
+            for (let i = 0; i < offset; i++) htmlCal += '<div class="cal-day vacio"></div>';
+            for (let d = 1; d <= diasEnMes; d++) {
+                const ymd = `${anioCalendario}-${String(mesCalendario + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const gasto = gastosDia[d] || 0;
+                let clases = 'cal-day';
+                // Blanco (sin color) si no hubo gasto; verde/amarillo/rojo según cuánto se gastó
+                if (gasto > 0 && maxGasto > 0) {
+                    const ratio = gasto / maxGasto;
+                    if (ratio > 0.66) clases += ' gasto-alto';
+                    else if (ratio > 0.33) clases += ' gasto-medio';
+                    else clases += ' gasto-bajo';
+                }
+                if (esMesActual && d === hoyDia) clases += ' hoy';
+                if (diaSeleccionado === ymd) clases += ' seleccionado';
+                const tooltip = gasto > 0 ? ` title="Gastado: ${formatearMoneda(gasto)}"` : '';
+                htmlCal += `<div class="${clases}" data-fecha="${ymd}"${tooltip}>${d}</div>`;
+            }
+            grid.innerHTML = htmlCal;
+        }
+
+        function seleccionarDia(ymd) {
+            // Clic sobre el día ya seleccionado lo deselecciona (vuelve a vista general)
+            diaSeleccionado = (diaSeleccionado === ymd) ? null : ymd;
+            actualizarResumen();
+            actualizarGraficos();
+            renderizarCalendario();
+        }
+
+        function vistaGeneral() {
+            diaSeleccionado = null;
+            actualizarResumen();
+            actualizarGraficos();
+            renderizarCalendario();
+        }
+
+        function renderizarPickerMeses() {
+            document.getElementById('cal-year-label').textContent = anioCalendario;
+            const cont = document.getElementById('cal-picker-months');
+            cont.innerHTML = NOMBRES_MESES.map((nombre, i) =>
+                `<button type="button" class="cal-picker-month${i === mesCalendario ? ' activo' : ''}" data-mes="${i}">${nombre.slice(0, 3)}</button>`
+            ).join('');
+        }
+
+        // --- Registro automático por URL ---
+        // Permite que una automatización del teléfono (Atajos en iOS, MacroDroid/Tasker en Android)
+        // registre un gasto abriendo la app con parámetros:
+        //   index.html?monto=15990&desc=Cafe&cat=alimentos&fecha=2026-07-02&ref=id-unico
+        // 'monto' es obligatorio; el resto es opcional. 'ref' evita registrar el mismo pago dos veces.
+        let gastoPendienteURL = null;
+
+        function capturarGastoDesdeURL() {
+            const params = new URLSearchParams(location.search);
+            if (!params.has('monto')) return;
+            // Limpiar la URL de inmediato: un refresco de página no debe duplicar el gasto
+            try { history.replaceState(null, '', location.pathname); } catch (err) { /* file:// u otros */ }
+            const monto = parsearMonto(params.get('monto'));
+            if (monto <= 0) return;
+            const categoriasValidas = ['alimentos', 'transporte', 'hogar', 'ocio', 'otros'];
+            const cat = (params.get('cat') || 'otros').toLowerCase();
+            gastoPendienteURL = {
+                monto,
+                descripcion: (params.get('desc') || 'Pago con tarjeta').slice(0, 60),
+                categoria: categoriasValidas.includes(cat) ? cat : 'otros',
+                fecha: /^\d{4}-\d{2}-\d{2}$/.test(params.get('fecha') || '') ? params.get('fecha') : obtenerHoyYMD(),
+                ref: (params.get('ref') || '').slice(0, 40)
+            };
+        }
+
+        function procesarGastoPendienteURL() {
+            if (!gastoPendienteURL || !currentUser) return;
+            const g = gastoPendienteURL;
+            gastoPendienteURL = null;
+
+            // Dedup: si la automatización envía 'ref', un mismo pago no se registra dos veces
+            if (g.ref) {
+                let refs = [];
+                try { refs = JSON.parse(almacen.getItem(`gastos_refs_${currentUser}`)) || []; } catch (err) { refs = []; }
+                if (refs.includes(g.ref)) {
+                    notificar('Pago ya registrado anteriormente (omitido)', 'warning');
+                    return;
+                }
+                refs.push(g.ref);
+                almacen.setItem(`gastos_refs_${currentUser}`, JSON.stringify(refs.slice(-100)));
+            }
+
+            const pctAntes = pctRestanteTope();
+            transacciones.push({
+                id: 'auto_' + Date.now(),
+                monto: g.monto,
+                descripcion: g.descripcion,
+                categoria: g.categoria,
+                fecha: g.fecha
+            });
+            guardarEnLocalStorage();
+            renderizarTodo();
+            avisarCruceUmbral(pctAntes, pctRestanteTope());
+            notificar(`Gasto registrado automáticamente: ${formatearMoneda(g.monto)}`, 'success');
+        }
+
+        function renderizarTodo() {
+            actualizarResumen();
+            renderizarHistorial();
+            actualizarTope();
+            actualizarGraficos();
+            renderizarCalendario();
+        }
+
+        // --- 7. Gestión de Pestañas (Tab Controller) ---
+        function switchTab(tabId) {
+            // Ocultar todas las pestañas
+            document.querySelectorAll('.tab-pane').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Remover active del menú lateral
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Activar la pestaña solicitada
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) targetTab.classList.add('active');
+
+            // Activar ítem del sidebar
+            const activeItem = document.querySelector(`.sidebar-item[data-tab="${tabId}"]`);
+            if (activeItem) activeItem.classList.add('active');
+        }
+
+        // --- 8. Acciones (Edición y Eliminación) ---
+        window.prepararEdicion = function (id) {
+            const t = transacciones.find(item => item.id === id);
+            if (!t) return;
+            idEdicion = t.id;
+            inputMonto.value = new Intl.NumberFormat('es-CL').format(t.monto);
+            inputDescripcion.value = t.descripcion;
+            selectCategoria.value = t.categoria;
+            inputFecha.value = t.fecha;
+            formTitle.textContent = 'Editar Movimiento';
+            submitBtn.textContent = 'Guardar Cambios';
+            if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+
+            // Redirigir a la pestaña "Registrar" (Formulario)
+            switchTab('tab-agregar');
+        };
+
+        window.eliminarMovimiento = async function (id) {
+            const ok = await confirmar('¿Estás seguro de eliminar este movimiento?');
+            if (ok) {
+                transacciones = transacciones.filter(t => t.id !== id);
+                guardarEnLocalStorage();
+                if (idEdicion === id) {
+                    idEdicion = null;
+                    form.reset();
+                    inputFecha.value = obtenerHoyYMD();
+                    formTitle.textContent = 'Registrar Nuevo Movimiento';
+                    submitBtn.textContent = 'Guardar Movimiento';
+                    if (cancelBtn) cancelBtn.style.display = 'none';
+                }
+                renderizarTodo();
+                notificar('Movimiento eliminado', 'success');
+            }
+        };
+
+        // --- 9. Eventos ---
+        inputMonto.addEventListener('input', (e) => {
+            let val = parsearMonto(e.target.value);
+            e.target.value = val === 0 ? '' : new Intl.NumberFormat('es-CL').format(val);
+        });
+
+        // Eventos del Calendario
+        document.getElementById('cal-grid').addEventListener('click', (e) => {
+            const dia = e.target.closest('.cal-day');
+            if (!dia || dia.classList.contains('vacio')) return;
+            seleccionarDia(dia.getAttribute('data-fecha'));
+        });
+
+        document.getElementById('btn-vista-general').addEventListener('click', vistaGeneral);
+
+        document.getElementById('cal-prev').addEventListener('click', () => {
+            mesCalendario--;
+            if (mesCalendario < 0) { mesCalendario = 11; anioCalendario--; }
+            renderizarCalendario();
+        });
+
+        document.getElementById('cal-next').addEventListener('click', () => {
+            mesCalendario++;
+            if (mesCalendario > 11) { mesCalendario = 0; anioCalendario++; }
+            renderizarCalendario();
+        });
+
+        // Selector de mes/año al clickear el título del calendario
+        document.getElementById('cal-label').addEventListener('click', () => {
+            const picker = document.getElementById('cal-picker');
+            const abierto = picker.style.display !== 'none';
+            picker.style.display = abierto ? 'none' : 'block';
+            if (!abierto) renderizarPickerMeses();
+        });
+
+        document.getElementById('cal-year-prev').addEventListener('click', () => {
+            anioCalendario--;
+            renderizarPickerMeses();
+            renderizarCalendario();
+        });
+
+        document.getElementById('cal-year-next').addEventListener('click', () => {
+            anioCalendario++;
+            renderizarPickerMeses();
+            renderizarCalendario();
+        });
+
+        document.getElementById('cal-picker-months').addEventListener('click', (e) => {
+            const btn = e.target.closest('.cal-picker-month');
+            if (!btn) return;
+            mesCalendario = Number(btn.getAttribute('data-mes'));
+            document.getElementById('cal-picker').style.display = 'none';
+            renderizarCalendario();
+        });
+
+        // Eventos del Tope de Gastos
+        const inputTope = document.getElementById('input-tope');
+        inputTope.addEventListener('input', (e) => {
+            let val = parsearMonto(e.target.value);
+            e.target.value = val === 0 ? '' : new Intl.NumberFormat('es-CL').format(val);
+        });
+
+        document.getElementById('btn-guardar-tope').addEventListener('click', () => {
+            const valor = parsearMonto(inputTope.value);
+            if (valor <= 0) return notificar('Ingresa un monto válido para el tope', 'error');
+            topeMensual = valor;
+            almacen.setItem(`gastos_budget_${currentUser}`, String(valor));
+            inputTope.value = '';
+            actualizarTope();
+            notificar('Tope mensual establecido', 'success');
+        });
+
+        document.getElementById('btn-editar-tope').addEventListener('click', () => {
+            inputTope.value = new Intl.NumberFormat('es-CL').format(topeMensual);
+            document.getElementById('budget-setup').style.display = 'block';
+            document.getElementById('budget-status').style.display = 'none';
+            document.getElementById('btn-editar-tope').style.display = 'none';
+        });
+
+        document.getElementById('btn-quitar-tope').addEventListener('click', async () => {
+            const ok = await confirmar('¿Quitar el tope de gastos del mes?');
+            if (!ok) return;
+            topeMensual = 0;
+            almacen.removeItem(`gastos_budget_${currentUser}`);
+            actualizarTope();
+            notificar('Tope eliminado', 'success');
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const monto = parsearMonto(inputMonto.value);
+            if (monto <= 0) return notificar('Monto inválido', 'error');
+            const pctAntes = pctRestanteTope();
+            if (idEdicion) {
+                const i = transacciones.findIndex(t => t.id === idEdicion);
+                transacciones[i] = { id: idEdicion, monto, descripcion: inputDescripcion.value.trim(), categoria: selectCategoria.value, fecha: inputFecha.value };
+                idEdicion = null;
+                formTitle.textContent = 'Registrar Nuevo Movimiento';
+                submitBtn.textContent = 'Guardar Movimiento';
+                if (cancelBtn) cancelBtn.style.display = 'none';
+            } else {
+                transacciones.push({ id: Date.now().toString(), monto, descripcion: inputDescripcion.value.trim(), categoria: selectCategoria.value, fecha: inputFecha.value });
+            }
+            guardarEnLocalStorage();
+            renderizarTodo();
+            avisarCruceUmbral(pctAntes, pctRestanteTope());
+            form.reset();
+            inputFecha.value = obtenerHoyYMD();
+
+            // Al guardar, volver al Dashboard
+            switchTab('tab-dashboard');
+        });
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                idEdicion = null;
+                form.reset();
+                inputFecha.value = obtenerHoyYMD();
+                formTitle.textContent = 'Registrar Nuevo Movimiento';
+                submitBtn.textContent = 'Guardar Movimiento';
+                cancelBtn.style.display = 'none';
+                switchTab('tab-dashboard');
+            });
+        }
+
+        searchInput.addEventListener('input', renderizarHistorial);
+
+        // Delegación de eventos para Editar/Eliminar (más seguro que onclick inline)
+        function manejarClickLista(e) {
+            const item = e.target.closest('.transaction-item');
+            if (!item) return;
+            const id = item.getAttribute('data-id');
+            if (e.target.closest('.btn-editar')) prepararEdicion(id);
+            else if (e.target.closest('.btn-eliminar')) eliminarMovimiento(id);
+        }
+        historyListEl.addEventListener('click', manejarClickLista);
+
+        document.getElementById('btn-exportar').addEventListener('click', () => {
+            const blob = new Blob([JSON.stringify(transacciones, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gastos_${currentUser}_backup.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            notificar('Copia de seguridad exportada', 'success');
+        });
+
+        document.getElementById('btn-exportar-csv').addEventListener('click', () => {
+            if (transacciones.length === 0) return notificar('No hay movimientos para exportar', 'error');
+            const filas = [['Fecha', 'Descripción', 'Categoría', 'Monto (CLP)']];
+            [...transacciones]
+                .sort((a, b) => a.fecha.localeCompare(b.fecha))
+                .forEach(t => filas.push([t.fecha, t.descripcion, t.categoria, t.monto]));
+            // Separador ';' y BOM UTF-8 para que Excel en español lo abra bien
+            const csv = '\uFEFF' + filas
+                .map(f => f.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';'))
+                .join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gastos_${currentUser}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            notificar('CSV exportado para Excel', 'success');
+        });
+
+        document.getElementById('btn-importar-trigger').addEventListener('click', () => document.getElementById('input-importar').click());
+        document.getElementById('input-importar').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const datos = JSON.parse(evt.target.result);
+                    if (Array.isArray(datos)) {
+                        const esValido = datos.every(t =>
+                            t && typeof t === 'object' &&
+                            t.id !== undefined && t.id !== null &&
+                            !isNaN(Number(t.monto)) && Number(t.monto) >= 0 &&
+                            typeof t.descripcion === 'string' && t.descripcion.trim() !== '' &&
+                            typeof t.categoria === 'string' &&
+                            typeof t.fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.fecha)
+                        );
+                        if (!esValido) {
+                            notificar('El archivo no tiene el formato de copia de seguridad correcto', 'error');
+                            return;
+                        }
+                        const ok = await confirmar('¿Reemplazar los datos actuales con la copia de seguridad?');
+                        if (ok) {
+                            // Normalizar tipos: id como string, monto como número
+                            transacciones = datos.map(t => ({
+                                id: String(t.id),
+                                monto: Number(t.monto),
+                                descripcion: t.descripcion.trim(),
+                                categoria: t.categoria.toLowerCase(),
+                                fecha: t.fecha
+                            }));
+                            guardarEnLocalStorage();
+                            renderizarTodo();
+                            notificar('Copia de seguridad importada con éxito', 'success');
+                        }
+                    } else {
+                        notificar('El archivo no contiene un listado de movimientos válido', 'error');
+                    }
+                } catch { notificar('Error al importar: selecciona un archivo JSON de respaldo válido', 'error'); }
+                e.target.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = loginUsernameInput.value.trim();
+            if (user) iniciarSesion(user);
+        });
+
+        userAvatar.addEventListener('click', (e) => { e.stopPropagation(); userDropdown.classList.toggle('show'); });
+        document.addEventListener('click', () => userDropdown.classList.remove('show'));
+        btnLogout.addEventListener('click', cerrarSesion);
+
+        if (btnDropdownAjustes) {
+            btnDropdownAjustes.addEventListener('click', () => {
+                switchTab('tab-ajustes');
+                userDropdown.classList.remove('show');
+            });
+        }
+
+        // --- 10. Eventos de la barra lateral (Sidebar Switcher) ---
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const tabId = item.getAttribute('data-tab');
+                switchTab(tabId);
+            });
+        });
+
+        // Evento cambio de divisa
+        selectDivisa.addEventListener('change', (e) => {
+            divisaActual = e.target.value;
+            almacen.setItem('gastos_currency', divisaActual);
+            actualizarColoresGraficos();
+            renderizarTodo(); // actualiza también el total del resumen y los montos de las listas
+        });
+
+        // Evento eliminación de todos los datos
+        document.getElementById('btn-limpiar').addEventListener('click', async () => {
+            const ok = await confirmar('¿Eliminar TODOS los movimientos registrados? Esta acción no se puede deshacer.');
+            if (ok) {
+                transacciones = [];
+                guardarEnLocalStorage();
+                renderizarTodo();
+                notificar('Todos los datos han sido eliminados', 'success');
+            }
+        });
+
+        // Registro del Service Worker (PWA): permite instalar la app y usarla sin conexión.
+        // Requiere servirse por http(s); en file:// simplemente se omite sin romper nada.
+        if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .catch(err => console.warn('Service Worker no registrado:', err));
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            capturarGastoDesdeURL();
+            inicializarGraficos();
+            if (currentUser) iniciarSesion(currentUser);
+            else loginOverlay.style.display = 'flex';
+
+            // Configuración del interruptor de tema (claro/oscuro)
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            if (themeToggleBtn) {
+                themeToggleBtn.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+                themeToggleBtn.addEventListener('click', () => {
+                    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                    almacen.setItem('gastos_theme', currentTheme);
+                    themeToggleBtn.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+                    actualizarColoresGraficos();
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

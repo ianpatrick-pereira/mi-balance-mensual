@@ -1,0 +1,32 @@
+{
+    "name": "Mi Balance Mensual",
+    "short_name": "Mi Balance",
+    "description": "Gestión inteligente de gastos personales con tope mensual y calendario.",
+    "lang": "es-CL",
+    "start_url": "./index.html",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "background_color": "#090d16",
+    "theme_color": "#090d16",
+    "icons": [
+        {
+            "src": "icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
