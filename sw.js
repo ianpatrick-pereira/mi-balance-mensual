@@ -7,7 +7,7 @@
    - Al publicar cambios, subir el número de CACHE_VERSION para invalidar
      el caché antiguo en los dispositivos. */
 
-const CACHE_VERSION = 'mi-balance-v2';
+const CACHE_VERSION = 'mi-balance-v3';
 
 const APP_SHELL = [
     './',
