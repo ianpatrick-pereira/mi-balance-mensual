@@ -2820,16 +2820,18 @@
         document.getElementById('detail-btn-close').addEventListener('click', cerrarDetalle);
 
         document.getElementById('detail-btn-edit').addEventListener('click', () => {
-            if (detailCurrentId) {
+            const id = detailCurrentId;
+            if (id) {
                 cerrarDetalle();
-                prepararEdicion(detailCurrentId);
+                prepararEdicion(id);
             }
         });
 
         document.getElementById('detail-btn-delete').addEventListener('click', async () => {
-            if (detailCurrentId) {
+            const id = detailCurrentId;
+            if (id) {
                 cerrarDetalle();
-                await eliminarMovimiento(detailCurrentId);
+                await eliminarMovimiento(id);
             }
         });
 
