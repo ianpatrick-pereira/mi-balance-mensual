@@ -1,13 +1,12 @@
 /* Service Worker de Mi Balance Mensual
    Estrategia:
-   - Shell de la app (HTML, manifest, íconos): precache en la instalación.
-   - Recursos externos (Chart.js, Font Awesome, Google Fonts): se cachean la
-     primera vez que se piden con conexión y luego se sirven desde caché,
-     así la app funciona completa sin internet.
-   - Al publicar cambios, subir el número de CACHE_VERSION para invalidar
-     el caché antiguo en los dispositivos. */
+   - Shell de la app (HTML, manifest, íconos): NETWORK FIRST — siempre
+     intenta traer la última versión; si no hay red, sirve del caché.
+   - Recursos externos (Chart.js, Font Awesome, Google Fonts): cache first,
+     se cachean la primera vez y luego se sirven desde caché.
+   - Al publicar cambios, subir CACHE_VERSION para limpiar caché viejo. */
 
-const CACHE_VERSION = 'mi-balance-v4';
+const CACHE_VERSION = 'mi-balance-v5';
 
 const APP_SHELL = [
     './',
@@ -39,23 +38,36 @@ self.addEventListener('fetch', (event) => {
     const req = event.request;
     if (req.method !== 'GET') return;
 
-    event.respondWith(
-        caches.match(req).then((enCache) => {
-            if (enCache) return enCache;
+    const url = new URL(req.url);
+    const esAppShell = url.origin === self.location.origin;
 
-            return fetch(req)
+    if (esAppShell) {
+        // NETWORK FIRST para archivos propios — siempre busca la última versión
+        event.respondWith(
+            fetch(req)
                 .then((respuesta) => {
-                    // Cachear respuestas válidas (incluye opacas de los CDN)
+                    const copia = respuesta.clone();
+                    caches.open(CACHE_VERSION).then((cache) => cache.put(req, copia));
+                    return respuesta;
+                })
+                .catch(() => caches.match(req).then((enCache) => {
+                    if (enCache) return enCache;
+                    if (req.mode === 'navigate') return caches.match('./index.html');
+                }))
+        );
+    } else {
+        // CACHE FIRST para CDNs externos (Chart.js, Font Awesome, Google Fonts)
+        event.respondWith(
+            caches.match(req).then((enCache) => {
+                if (enCache) return enCache;
+                return fetch(req).then((respuesta) => {
                     if (respuesta && (respuesta.ok || respuesta.type === 'opaque')) {
                         const copia = respuesta.clone();
                         caches.open(CACHE_VERSION).then((cache) => cache.put(req, copia));
                     }
                     return respuesta;
-                })
-                .catch(() => {
-                    // Sin conexión y sin caché: si es navegación, servir el shell
-                    if (req.mode === 'navigate') return caches.match('./index.html');
                 });
-        })
-    );
+            })
+        );
+    }
 });
