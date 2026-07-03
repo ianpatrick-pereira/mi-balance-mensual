@@ -1005,13 +1005,19 @@
                 max-width: none !important;
             }
 
-            /* Acciones de editar/eliminar siempre visibles y con área táctil */
+            /* MÓVIL: ocultar botones editar/eliminar en la lista (se ven en el modal) */
             .transaction-item .actions {
-                opacity: 1 !important;
+                display: none !important;
             }
 
-            .transaction-item .actions i {
-                padding: 8px;
+            /* MÓVIL: hacer items clickeables */
+            .transaction-item {
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .transaction-item:active {
+                transform: scale(0.98);
+                background-color: var(--bg-card);
             }
 
             /* Modal y toasts con margen en pantallas chicas */
@@ -1392,6 +1398,138 @@
             transform: translateY(-1px);
         }
 
+        /* --- Modal de detalle de transacción (móvil) --- */
+        .detail-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 10001;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+        .detail-overlay.show {
+            display: flex;
+        }
+        .detail-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 24px 24px 0 0;
+            padding: 28px 24px 24px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.3);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            animation: detailSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes detailSlideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+        .detail-handle {
+            width: 40px;
+            height: 4px;
+            background: var(--text-muted);
+            border-radius: 4px;
+            margin: 0 auto 20px;
+            opacity: 0.4;
+        }
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .detail-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        .detail-title-group {
+            flex: 1;
+            min-width: 0;
+        }
+        .detail-desc {
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+        .detail-category {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            text-transform: capitalize;
+        }
+        .detail-amount {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-danger);
+            text-align: center;
+            margin: 16px 0;
+            letter-spacing: -0.5px;
+        }
+        .detail-date {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+        .detail-date i {
+            margin-right: 6px;
+            color: var(--text-muted);
+        }
+        .detail-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .detail-btn {
+            flex: 1;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .detail-btn i {
+            font-size: 0.85rem;
+        }
+        .detail-btn-close {
+            background: var(--bg-app);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-card);
+        }
+        .detail-btn-edit {
+            background: var(--accent-primary);
+            color: #fff;
+        }
+        .detail-btn-delete {
+            background: transparent;
+            color: var(--accent-danger);
+            border: 1px solid var(--accent-danger);
+            flex: 0 0 auto;
+            padding: 14px 16px;
+        }
+        .detail-btn:active {
+            transform: scale(0.97);
+        }
+
         /* --- Toasts de notificación (reemplazan alert() nativo) --- */
         #toast-container {
             position: fixed;
@@ -1455,6 +1593,28 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de detalle de transacción (móvil) -->
+    <div class="detail-overlay" id="detail-overlay">
+        <div class="detail-card">
+            <div class="detail-handle"></div>
+            <div class="detail-header">
+                <div class="detail-icon" id="detail-icon"><i id="detail-icon-i"></i></div>
+                <div class="detail-title-group">
+                    <div class="detail-desc" id="detail-desc"></div>
+                    <div class="detail-category" id="detail-cat"></div>
+                </div>
+            </div>
+            <div class="detail-amount" id="detail-amount"></div>
+            <div class="detail-date" id="detail-date"><i class="fas fa-calendar-alt"></i><span id="detail-date-text"></span></div>
+            <div class="detail-actions">
+                <button type="button" class="detail-btn detail-btn-close" id="detail-btn-close"><i class="fas fa-times"></i>Cerrar</button>
+                <button type="button" class="detail-btn detail-btn-edit" id="detail-btn-edit"><i class="fas fa-pencil-alt"></i>Editar</button>
+                <button type="button" class="detail-btn detail-btn-delete" id="detail-btn-delete"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+    </div>
+
     <!-- Contenedor de notificaciones -->
     <div id="toast-container"></div>
 
@@ -2622,13 +2782,72 @@
 
         searchInput.addEventListener('input', renderizarHistorial);
 
-        // Delegación de eventos para Editar/Eliminar (más seguro que onclick inline)
+        // --- Modal de detalle (móvil) ---
+        const detailOverlay = document.getElementById('detail-overlay');
+        let detailCurrentId = null;
+
+        function esMobile() {
+            return window.innerWidth <= 768;
+        }
+
+        function abrirDetalle(id) {
+            const t = transacciones.find(item => item.id === id);
+            if (!t) return;
+            detailCurrentId = id;
+            const cat = configCategorias[t.categoria] || configCategorias.otros;
+
+            document.getElementById('detail-icon').style.backgroundColor = cat.color;
+            document.getElementById('detail-icon-i').className = cat.icon;
+            document.getElementById('detail-desc').textContent = t.descripcion;
+            document.getElementById('detail-cat').textContent = t.categoria;
+            document.getElementById('detail-amount').textContent = '-' + formatearMoneda(t.monto);
+            document.getElementById('detail-date-text').textContent = formatearFechaLegible(t.fecha);
+
+            detailOverlay.classList.add('show');
+        }
+
+        function cerrarDetalle() {
+            detailOverlay.classList.remove('show');
+            detailCurrentId = null;
+        }
+
+        // Cerrar al tocar el fondo
+        detailOverlay.addEventListener('click', (e) => {
+            if (e.target === detailOverlay) cerrarDetalle();
+        });
+
+        // Botones del modal de detalle
+        document.getElementById('detail-btn-close').addEventListener('click', cerrarDetalle);
+
+        document.getElementById('detail-btn-edit').addEventListener('click', () => {
+            if (detailCurrentId) {
+                cerrarDetalle();
+                prepararEdicion(detailCurrentId);
+            }
+        });
+
+        document.getElementById('detail-btn-delete').addEventListener('click', async () => {
+            if (detailCurrentId) {
+                cerrarDetalle();
+                await eliminarMovimiento(detailCurrentId);
+            }
+        });
+
+        // Delegación de eventos para Editar/Eliminar + detalle móvil
         function manejarClickLista(e) {
             const item = e.target.closest('.transaction-item');
             if (!item) return;
             const id = item.getAttribute('data-id');
-            if (e.target.closest('.btn-editar')) prepararEdicion(id);
-            else if (e.target.closest('.btn-eliminar')) eliminarMovimiento(id);
+
+            // En desktop: botones de editar/eliminar directos
+            if (!esMobile()) {
+                if (e.target.closest('.btn-editar')) prepararEdicion(id);
+                else if (e.target.closest('.btn-eliminar')) eliminarMovimiento(id);
+                return;
+            }
+
+            // En móvil: abrir modal de detalle
+            abrirDetalle(id);
         }
         historyListEl.addEventListener('click', manejarClickLista);
 
